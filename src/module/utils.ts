@@ -44,3 +44,13 @@ export const checkContact =  (resultCheck: string): boolean => {
   if (!resultCheck.length) return true
   return resultCheck.indexOf('True') !== -1 ? false : true
 }
+
+
+/**
+ ** Получение случайного числа
+ * @function getRandom
+ */
+export const getRandom = (): string => {
+  const num: number = Math.floor(Math.random() * 99999)
+  return String(num)
+}

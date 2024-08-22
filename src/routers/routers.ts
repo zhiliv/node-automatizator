@@ -1,6 +1,7 @@
 import express from 'express'
 import { deviceRouter } from './devices.route.js'
 import { MessageRouter } from './messages.route.js'
+import { PhoneRouter } from './phones.route.js'
 import {authRoute} from './auth.route.js'
 import type { ListRoute } from '../../types/Route.type.ts'
 import type { Router } from 'express'
@@ -19,7 +20,11 @@ export const routers: ListRoute[] = [
   {
     path: '/messages',
     route: MessageRouter,
-  }
+  },
+  {
+    path: '/phones',
+    route: PhoneRouter,
+  },
 ]
 
 routers.forEach((route: ListRoute) => router.use(route.path, route.route))

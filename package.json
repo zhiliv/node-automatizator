@@ -27,6 +27,6 @@
   "scripts": {
     "dev": "nodemon isDev=true",
     "build": "tsc",
-    "start:node": "node --loader ts-node/esm src/app.ts"
+    "start": "node dist/src/app.js"
   }
 }

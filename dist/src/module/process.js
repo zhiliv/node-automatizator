@@ -19,12 +19,13 @@ if (!message) {
 if (message) {
     const messageIndex = messages.findIndex((el) => el.id === message.id);
     const devices = await getDevicesADB(devicesFile).catch((err) => parentPort.postMessage(err));
+    console.log('devices', devices);
     if (devices && !devices?.length) {
         console.warn('Нет устройств ABD');
         parentPort.postMessage('not device');
     }
     if (devices && devices.length) {
-        const freeDevices = devices.filter((el) => el.count <= 2); // Получение устройств с количеством отправленных сообщений менее двух за последние 24 часа
+        const freeDevices = devices.filter((el) => el.count <= 2 && el.status === 'free'); // Получение устройств с количеством отправленных сообщений менее двух за последние 24 часа
         if (!freeDevices.length) {
             parentPort.postMessage('not free device');
         }
@@ -36,12 +37,12 @@ if (message) {
         await killAppContact(device).catch((err) => parentPort.postMessage(err));
         const contacts = await getAllContacts(device).catch((err) => parentPort.postMessage(err));
         if ((contacts && !contacts.length) || contacts.findIndex((el) => +el.number === +message.phone) === -1) {
-            await addContact(device, message);
+            await addContact(device, +message.phone);
         }
         await runWhatsapp(device).catch((err) => parentPort.postMessage(err));
         await generateScripts('isCreate', device);
         await sendEventKey(message.phone, device); // Поиск номера телефона в списке контактов в whatsapp
-        const checkPhone = await generateScripts('isCheck', device, message); // генерация скрипта для проверки наличия есть ли данный контакт в whatsapp
+        const checkPhone = await generateScripts('isCheck', device); // генерация скрипта для проверки наличия есть ли данный контакт в whatsapp
         const check = checkContact(checkPhone);
         if (check) {
             await tapCoordinates(device, 580, 306); // выбор контакта
@@ -49,7 +50,7 @@ if (message) {
             await tapCoordinates(device, 838, 1509); // Нажатие кнопки "отправить"
             await killAppWhatsapp(device);
             messages[messageIndex].isWhatsapp = true;
-            await fs.writeFileSync('./dist/message.json', JSON.stringify(messages));
+            await fs.writeFileSync('./messages.json', JSON.stringify(messages));
         }
         messages[messageIndex].status = true;
         messages[messageIndex].isWhatsapp = false;

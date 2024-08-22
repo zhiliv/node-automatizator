@@ -138,9 +138,9 @@ export const tapCoordinates = (device, x, y) => {
 ** Добавление номера в контакты
 * @function addContact
 * @param {object} device - устройство
-* @param {object} message - данные сообщения
+* @param {object} phone - номер телефона
 */
-export const addContact = async (device, message) => {
+export const addContact = async (device, phone) => {
     /**
     ** Добавление номера в контакты через adb
     * @function insertContact
@@ -149,7 +149,7 @@ export const addContact = async (device, message) => {
         return new Promise(async (resolve, reject) => {
             setTimeout(async () => {
                 try {
-                    await execCLI(`adb -s ${device.address} shell am start -a android.intent.action.INSERT -t vnd.android.cursor.dir/contact -e name '${getRandomName()}' -e phone ${message.phone}`);
+                    await execCLI(`adb -s ${device.address} shell am start -a android.intent.action.INSERT -t vnd.android.cursor.dir/contact -e name '${getRandomName()}' -e phone ${phone}`);
                     resolve(true);
                 }
                 catch (err) {

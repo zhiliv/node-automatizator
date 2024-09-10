@@ -12,13 +12,16 @@ import { getRandomName, getRandomNumber } from './utils.js'
 export const getDevicesADB = async (devicesFile: DeviceADB[]): Promise<DeviceADB[] | void> => {
   return new Promise(async (resolve, reject) => {
     try {
-      const devicesStr: String = await execCLI('adb devices')
+      const devicesStr: String = await execCLI('nox_adb devices')
       console.log("🚀 -> newPromise -> devicesStr:", devicesStr)
-      const devices: string[] = devicesStr
-      .split('\n')
-      .filter((el) => el !== 'List of devices attached\r')
-      .map((el) => el.replace('\tdevice\r', ''))
-      .filter((el) => el !== '\r' && el !== '')
+      if (devicesStr === 'List of devices attached'){
+        resolve([])
+      }
+        const devices: string[] = devicesStr
+          .split('\n')
+          .filter((el) => el !== 'List of devices attached\r')
+          .map((el) => el.replace('\tdevice\r', ''))
+          .filter((el) => el !== '\r' && el !== '')
       
       devices.forEach((el: string) => {
         const index: number = devicesFile.findIndex((dev) => dev.address === el)
@@ -36,6 +39,7 @@ export const getDevicesADB = async (devicesFile: DeviceADB[]): Promise<DeviceADB
       
       await fs.writeFileSync('./dist/devices.json', JSON.stringify(devicesFile))
       const result: DeviceADB[] = JSON.parse(await fs.readFileSync('./dist/devices.json').toString())
+      console.log("🚀 -> returnnewPromise -> result:", result)
       resolve(result)
     } catch (err) {
       reject(`Ошибка при получении списка устройств ADB: ${err}`)
@@ -52,7 +56,7 @@ export const killAppWhatsapp = async (device: DeviceADB): Promise<boolean> => {
   return new Promise(async (resolve, reject) => {
     setTimeout(async () => {
       try {
-        await execCLI(`adb -s ${device.address} shell am force-stop com.whatsapp`)
+        await execCLI(`nox_adb -s ${device.address} shell am force-stop com.whatsapp`)
         resolve(true)
       } catch (err: any) {
         reject(`Ошибка при завершении приложения Whatsapp: ${err}`)
@@ -70,7 +74,7 @@ export const killAppContact = async (device: DeviceADB): Promise<boolean> => {
   return new Promise(async (resolve, reject) => {
     setTimeout(async () => {
       try {
-        await execCLI(`adb -s ${device.address} shell am force-stop com.android.contacts`)
+        await execCLI(`nox_adb -s ${device.address} shell am force-stop com.android.contacts`)
         resolve(true)
       } catch (err: any) {
         reject(`Ошибка при завершении приложения Contacts: ${err}`)
@@ -87,12 +91,15 @@ export const getAllContacts = async (device: DeviceADB): Promise<any> => {
   return new Promise(async (resolve, reject) => {
     try {
       let contactsStr: string = await execCLI(
-        `adb -s ${device.address} shell content query --uri content://contacts/phones/`,
+        `nox_adb -s ${device.address} shell content query --uri content://contacts/phones/`,
       )
+      
+      console.log('contactsStr', contactsStr)
       contactsStr = contactsStr.trim()
       const result: string[] = []
       
       if (contactsStr === `No result found.`) {
+        resolve(result)
         return result
       }
       
@@ -104,6 +111,7 @@ export const getAllContacts = async (device: DeviceADB): Promise<any> => {
         const obj: any = {}
         obj.row = ind
         row.forEach((el: any) => {
+          console.log("🚀 -> row.forEach -> el:", el)
           el = el.replace('\r', '')
           const parts = el.split('=')
           
@@ -118,7 +126,7 @@ export const getAllContacts = async (device: DeviceADB): Promise<any> => {
         })
         result.push(obj)
       })
-      
+      console.log('result', result)
       resolve(result)
     } catch (err: any) {
       reject(`Ошибка при получении списка контактов: ${err}`)
@@ -137,7 +145,7 @@ export const tapCoordinates = (device: DeviceADB, x: number, y: number): Promise
   return new Promise((resolve, reject) => {
     setTimeout(async () => {
       try {
-        await execCLI(`adb -s ${device.address} shell input tap ${x} ${y}`)
+        await execCLI(`nox_adb -s ${device.address} shell input tap ${x} ${y}`)
         resolve(true)
       } catch (err: any) {
         reject(`Ошибка при тапе по координатам: ${err}`)
@@ -162,7 +170,7 @@ export const addContact = async (device: DeviceADB, phone: number): Promise<bool
       setTimeout(async () => {
         try {
           await execCLI(
-            `adb -s ${device.address} shell am start -a android.intent.action.INSERT -t vnd.android.cursor.dir/contact -e name '${getRandomName()}' -e phone ${phone}`,
+            `nox_adb -s ${device.address} shell am start -a android.intent.action.INSERT -t vnd.android.cursor.dir/contact -e name '${getRandomName()}' -e phone ${phone}`,
           )
           resolve(true)
         } catch (err: any) {
@@ -188,7 +196,7 @@ export const runWhatsapp = async (device: DeviceADB): Promise<boolean> => {
   return new Promise(async (resolve, reject) => {
     setTimeout(async () => {
       try {
-        await execCLI(`adb -s ${device.address} shell monkey -p com.whatsapp -c android.intent.category.LAUNCHER 1`)
+        await execCLI(`nox_adb -s ${device.address} shell monkey -p com.whatsapp -c android.intent.category.LAUNCHER 1`)
         resolve(true)
       } catch (err: any) {
         reject(`Ошибка при запуске приложения whatsapp: ${err}`)

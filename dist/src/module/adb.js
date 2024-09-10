@@ -9,8 +9,11 @@ import { getRandomName, getRandomNumber } from './utils.js';
 export const getDevicesADB = async (devicesFile) => {
     return new Promise(async (resolve, reject) => {
         try {
-            const devicesStr = await execCLI('adb devices');
+            const devicesStr = await execCLI('nox_adb devices');
             console.log("🚀 -> newPromise -> devicesStr:", devicesStr);
+            if (devicesStr === 'List of devices attached') {
+                resolve([]);
+            }
             const devices = devicesStr
                 .split('\n')
                 .filter((el) => el !== 'List of devices attached\r')
@@ -30,6 +33,7 @@ export const getDevicesADB = async (devicesFile) => {
             });
             await fs.writeFileSync('./dist/devices.json', JSON.stringify(devicesFile));
             const result = JSON.parse(await fs.readFileSync('./dist/devices.json').toString());
+            console.log("🚀 -> returnnewPromise -> result:", result);
             resolve(result);
         }
         catch (err) {
@@ -46,7 +50,7 @@ export const killAppWhatsapp = async (device) => {
     return new Promise(async (resolve, reject) => {
         setTimeout(async () => {
             try {
-                await execCLI(`adb -s ${device.address} shell am force-stop com.whatsapp`);
+                await execCLI(`nox_adb -s ${device.address} shell am force-stop com.whatsapp`);
                 resolve(true);
             }
             catch (err) {
@@ -64,7 +68,7 @@ export const killAppContact = async (device) => {
     return new Promise(async (resolve, reject) => {
         setTimeout(async () => {
             try {
-                await execCLI(`adb -s ${device.address} shell am force-stop com.android.contacts`);
+                await execCLI(`nox_adb -s ${device.address} shell am force-stop com.android.contacts`);
                 resolve(true);
             }
             catch (err) {
@@ -80,10 +84,12 @@ export const killAppContact = async (device) => {
 export const getAllContacts = async (device) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let contactsStr = await execCLI(`adb -s ${device.address} shell content query --uri content://contacts/phones/`);
+            let contactsStr = await execCLI(`nox_adb -s ${device.address} shell content query --uri content://contacts/phones/`);
+            console.log('contactsStr', contactsStr);
             contactsStr = contactsStr.trim();
             const result = [];
             if (contactsStr === `No result found.`) {
+                resolve(result);
                 return result;
             }
             const contactsArr = contactsStr
@@ -94,6 +100,7 @@ export const getAllContacts = async (device) => {
                 const obj = {};
                 obj.row = ind;
                 row.forEach((el) => {
+                    console.log("🚀 -> row.forEach -> el:", el);
                     el = el.replace('\r', '');
                     const parts = el.split('=');
                     let key = parts[0];
@@ -107,6 +114,7 @@ export const getAllContacts = async (device) => {
                 });
                 result.push(obj);
             });
+            console.log('result', result);
             resolve(result);
         }
         catch (err) {
@@ -125,7 +133,7 @@ export const tapCoordinates = (device, x, y) => {
     return new Promise((resolve, reject) => {
         setTimeout(async () => {
             try {
-                await execCLI(`adb -s ${device.address} shell input tap ${x} ${y}`);
+                await execCLI(`nox_adb -s ${device.address} shell input tap ${x} ${y}`);
                 resolve(true);
             }
             catch (err) {
@@ -149,7 +157,7 @@ export const addContact = async (device, phone) => {
         return new Promise(async (resolve, reject) => {
             setTimeout(async () => {
                 try {
-                    await execCLI(`adb -s ${device.address} shell am start -a android.intent.action.INSERT -t vnd.android.cursor.dir/contact -e name '${getRandomName()}' -e phone ${phone}`);
+                    await execCLI(`nox_adb -s ${device.address} shell am start -a android.intent.action.INSERT -t vnd.android.cursor.dir/contact -e name '${getRandomName()}' -e phone ${phone}`);
                     resolve(true);
                 }
                 catch (err) {
@@ -173,7 +181,7 @@ export const runWhatsapp = async (device) => {
     return new Promise(async (resolve, reject) => {
         setTimeout(async () => {
             try {
-                await execCLI(`adb -s ${device.address} shell monkey -p com.whatsapp -c android.intent.category.LAUNCHER 1`);
+                await execCLI(`nox_adb -s ${device.address} shell monkey -p com.whatsapp -c android.intent.category.LAUNCHER 1`);
                 resolve(true);
             }
             catch (err) {

@@ -27,6 +27,6 @@
   "scripts": {
     "dev": "nodemon isDev=true",
     "build": "tsc",
-    "start": "node dist/src/app.js"
+    "start": "pm2 start dist/src/app.js"
   }
 }

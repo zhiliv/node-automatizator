@@ -33,6 +33,7 @@ if (!message) {
 
 if (message) {
   const messageIndex = messages.findIndex((el) => el.id === message.id)
+  console.log("🚀 -> messageIndex:", messageIndex)
 
   const devices: DeviceADB[] | void = await getDevicesADB(devicesFile).catch((err) => parentPort.postMessage(err))
   
@@ -50,6 +51,7 @@ if (message) {
     }
 
     const device: DeviceADB = freeDevices[0]
+    console.log("🚀 -> device:", device)
     const indexDevice: number = devices.findIndex((el: DeviceADB) => el.id === device.id) // Индекс используемого устройства
     devices[indexDevice].status = 'wait' // Установка статуса активного устройства
     await fs.writeFileSync('./dist/devices.json', JSON.stringify(devices))
@@ -58,6 +60,7 @@ if (message) {
     await killAppContact(device).catch((err) => parentPort.postMessage(err))
 
     const contacts: any = await getAllContacts(device).catch((err) => parentPort.postMessage(err))
+    
     if ((contacts && !contacts.length) || contacts.findIndex((el) => +el.number === +message.phone) === -1) {
       await addContact(device, +message.phone)
     }

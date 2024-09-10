@@ -43,6 +43,7 @@ const checkWhatsapp = (phone: number): Promise<string | boolean> => {
     try {
       const devicesStr: string = await fs.readFileSync('./dist/devices.json').toString()
       let devices: DeviceADB[] | any = JSON.parse(devicesStr) // Получение списка устройств ADB
+      console.log("🚀 -> returnnewPromise -> devices:", devices)
       if(!devices.length){
         devices = await getDevicesADB([])
       }
@@ -54,29 +55,39 @@ const checkWhatsapp = (phone: number): Promise<string | boolean> => {
       
       
       const freeDevices: DeviceADB[] = devices.filter((el: DeviceADB) => el.status === 'free')
+      console.log("🚀 -> returnnewPromise -> freeDevices:", freeDevices)
       if (!freeDevices.length) {
         reject('Нет свободных устройств')
       }
       
       const device = freeDevices[0] // устройство, которое будет проверять
+      console.log("🚀 -> returnnewPromise -> device:", device)
       const indexDevice: number = devices.findIndex((el: DeviceADB) => el.id === device.id) // Индекс используемого устройства
       devices[indexDevice].status = 'wait' // Устанавливаем статус, что устройство занято
       await fs.writeFileSync('./dist/devices.json', JSON.stringify(devices))
       
       await killAppWhatsapp(device).catch((err) => {
+        
         setFreeDevice(devices, indexDevice)
         //reject(err)
       })
+      console.log('Закрытие whatsapp')
       await killAppContact(device).catch((err) => {
+        
         setFreeDevice(devices, indexDevice)
         //reject(err)
       })
+      console.log('Закрытие контактов')
       
       const contacts: any = await getAllContacts(device).catch((err) => {
+        console.log("🚀 -> returnnewPromise -> err:", err)
         setFreeDevice(devices, indexDevice)
         //reject(err)
       })
+      console.log('contacts', contacts)
+      
       if ((contacts && !contacts.length) || contacts.findIndex((el) => +el.number === +phone) === -1) {
+        console.log('Создание контакта')
         await addContact(device, phone).catch((err) => {
           setFreeDevice(devices, indexDevice)
           //reject(err)
@@ -87,7 +98,9 @@ const checkWhatsapp = (phone: number): Promise<string | boolean> => {
         setFreeDevice(devices, indexDevice)
         //reject(err)
       })
+      console.log('Запуск ватсап')
       await generateScripts('isCreate', device)
+      
       await sendEventKey(String(phone), device) // Поиск номера телефона в списке контактов в whatsapp
       
       const checkPhone: string = await generateScripts('isCheck', device) // генерация скрипта для проверки наличия есть ли данный контакт в whatsapp

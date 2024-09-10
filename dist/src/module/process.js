@@ -18,6 +18,7 @@ if (!message) {
 }
 if (message) {
     const messageIndex = messages.findIndex((el) => el.id === message.id);
+    console.log("🚀 -> messageIndex:", messageIndex);
     const devices = await getDevicesADB(devicesFile).catch((err) => parentPort.postMessage(err));
     console.log('devices', devices);
     if (devices && !devices?.length) {
@@ -30,6 +31,7 @@ if (message) {
             parentPort.postMessage('not free device');
         }
         const device = freeDevices[0];
+        console.log("🚀 -> device:", device);
         const indexDevice = devices.findIndex((el) => el.id === device.id); // Индекс используемого устройства
         devices[indexDevice].status = 'wait'; // Установка статуса активного устройства
         await fs.writeFileSync('./dist/devices.json', JSON.stringify(devices));

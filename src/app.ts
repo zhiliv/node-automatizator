@@ -1,7 +1,6 @@
 import { Worker } from 'worker_threads'
 
 
-
 /**
  ** Запуск процесса обработки сообщений
  * @async

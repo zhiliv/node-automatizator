@@ -35,16 +35,15 @@ export const getRandomNumberScript = (min: number, max: number): number | string
  */
 export const getRandomNumber = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min
 
-/** 
-** Проверка существования контакта в whatsapp
-* @function checkContact
-* @param {string} resultCheck - результат проверки на устройстве
-*/
-export const checkContact =  (resultCheck: string): boolean => {
+/**
+ ** Проверка существования контакта в whatsapp
+ * @function checkContact
+ * @param {string} resultCheck - результат проверки на устройстве
+ */
+export const checkContact = (resultCheck: string): boolean => {
   if (!resultCheck.length) return true
   return resultCheck.indexOf('True') !== -1 ? false : true
 }
-
 
 /**
  ** Получение случайного числа
@@ -53,4 +52,10 @@ export const checkContact =  (resultCheck: string): boolean => {
 export const getRandom = (): string => {
   const num: number = Math.floor(Math.random() * 99999)
   return String(num)
+}
+
+export const validatePhone = (phoneNumber: number) =>  {
+  const phonePattern = /^7\d{10}$/
+  const phone = String(phoneNumber)
+  return phonePattern.test(phone)
 }

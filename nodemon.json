@@ -3,6 +3,5 @@
     "src"
   ],
   "ext": ".js,.ts",
-  "ignore": [],
-  "exec": "tsc && node dist/src/app.js"
+  "ignore": []
 }

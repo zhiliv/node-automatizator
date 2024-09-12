@@ -1,6 +1,6 @@
 import type { Response, NextFunction } from 'express'
 import type { RequestAuth } from '../../types/Auth.type.ts'
-const isDev = process.env?.npm_lifecycle_script?.indexOf('isDev=true') < 0 ? false : true // признак запуска проекта в режиме разработки
+
 
 export const authRoute = (req: RequestAuth, res: Response, next: NextFunction) => {
   let query = null

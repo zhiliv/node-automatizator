@@ -2,7 +2,7 @@
  ** Модуль для отправки сообщений
  */
 import fs from 'fs'
-import { parentPort } from 'worker_threads'
+import { parentPort, workerData } from 'worker_threads'
 import { getMessage } from './message.js'
 import {
   getDevicesADB,
@@ -12,13 +12,74 @@ import {
   addContact,
   runWhatsapp,
   sendEventKey,
+  killADB,
+  connectADB,
 } from './adb.js'
 import type { DeviceADB } from '../../types/Devices.js'
 import type { Message } from '../../types/Message.js'
+import type { Instance } from '../../types/Instances.js'
 import { generateScripts } from './run_py.js'
 import { checkContact } from './utils.js'
+import { getLastProneQueue } from './redis.js'
 import { tapCoordinates } from './adb.js'
+import { execCLI } from './cmd.js'
+import { setInstanceDB, getInstancesDB, startInstances } from './bluestack.js'
+import {insertCheckWhatsapp} from './pg.js'
 
+const params = workerData
+const data: {phone: number, } = await getLastProneQueue()
+
+if(data && data.phone && +data.phone > 79000000000){
+ try {
+   //await setInstanceDB()
+   //const instances: Instance[] = await getInstancesDB()
+   //await startInstances(instances[0])
+
+   const connect: boolean = await connectADB(params.instance.adb_port).catch()
+   if (connect === true) {
+     const contacts: any = await getAllContacts(params.instance).catch((err) => parentPort.postMessage(err))
+     if ((contacts && !contacts.length) || contacts.findIndex((el) => +el.number === +data.phone) === -1) {
+       await addContact(params.instance, +data.phone)
+     }
+
+     try {
+       await killAppContact(params.instance).catch()
+     } catch (err) {}
+
+     try {
+       await runWhatsapp(params.instance)
+     } catch (err) {}
+
+     try {
+     } catch (err) {}
+     await generateScripts('isCreate', params.instance)
+     await sendEventKey(String(+data.phone), params.instance)
+     const checkPhone: string = await generateScripts('isCheck', params.instance) // генерация скрипта для проверки наличия есть ли данный контакт в whatsapp
+     const check: boolean = checkContact(checkPhone)
+     await killAppWhatsapp(params.instance).catch()
+     console.log('🚀 -> check:', check)
+     await insertCheckWhatsapp(+data.phone, check, params.instance.id)
+     parentPort.postMessage(true)
+   }
+ } catch (err) {
+   console.error(`Произошла ошибка: ${err}`)
+   parentPort.postMessage(err)
+ }   
+}
+else{
+  await insertCheckWhatsapp(+data.phone, false, params.instance.id)
+  parentPort.postMessage(true)
+}
+
+//const phone = 79087868908
+
+//await insertCheckWhatsapp(phone, true, params.instance.id)
+
+
+
+//await startInstances()
+
+/* 
 const devicesStr = await fs.readFileSync('./dist/devices.json').toString()
 const devicesFile: DeviceADB[] = JSON.parse(devicesStr)
 
@@ -31,13 +92,16 @@ if (!message) {
   parentPort.postMessage('not message')
 }
 
+const devices: DeviceADB[] | void = await getDevicesADB(devicesFile).catch((err) => parentPort.postMessage(err))
+
+  console.log('devices333', devices)
+
 if (message) {
   const messageIndex = messages.findIndex((el) => el.id === message.id)
-  console.log("🚀 -> messageIndex:", messageIndex)
 
   const devices: DeviceADB[] | void = await getDevicesADB(devicesFile).catch((err) => parentPort.postMessage(err))
-  
-  console.log('devices', devices)
+
+  console.log('devices222', devices)
 
   if (devices && !devices?.length) {
     console.warn('Нет устройств ABD')
@@ -51,7 +115,6 @@ if (message) {
     }
 
     const device: DeviceADB = freeDevices[0]
-    console.log("🚀 -> device:", device)
     const indexDevice: number = devices.findIndex((el: DeviceADB) => el.id === device.id) // Индекс используемого устройства
     devices[indexDevice].status = 'wait' // Установка статуса активного устройства
     await fs.writeFileSync('./dist/devices.json', JSON.stringify(devices))
@@ -60,7 +123,7 @@ if (message) {
     await killAppContact(device).catch((err) => parentPort.postMessage(err))
 
     const contacts: any = await getAllContacts(device).catch((err) => parentPort.postMessage(err))
-    
+
     if ((contacts && !contacts.length) || contacts.findIndex((el) => +el.number === +message.phone) === -1) {
       await addContact(device, +message.phone)
     }
@@ -88,3 +151,4 @@ if (message) {
     await fs.writeFileSync('./dist/messages.json', JSON.stringify(messages))
   }
 }
+ */

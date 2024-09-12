@@ -40,7 +40,7 @@ const setFreeDevice = (devices: DeviceADB[], index: number): Promise<boolean> =>
 * @function checkWhatsapp
 * @param {number} phone - номер телефона для проверки
 */
-const checkWhatsapp = (phone: number): Promise<string | boolean> => {
+/* const checkWhatsapp = (phone: number): Promise<string | boolean> => {
   return new Promise(async (resolve, reject) => {
     try {
       const devicesStr: string = await fs.readFileSync('./dist/devices.json').toString()
@@ -109,7 +109,7 @@ const checkWhatsapp = (phone: number): Promise<string | boolean> => {
       reject(`Ошибка при проверка наличия зарегистрированного контакта в whatsapp: ${err}`)
     }
   })
-}
+} */
 
 /* Получение списка запущенных эмуляторов */
 PhoneRouter.post('/check-whatsapp', async (req: Request, res: Response) => {

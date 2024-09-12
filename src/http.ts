@@ -16,7 +16,7 @@ const length = await redis.llen('queue_checker_whatsapp')
 console.log("🚀 -> test:", test)  */
 
 
-console.log('🚀 -> length:', length)
+
 app.listen(3000, () => {
   console.log(`Сервер запущен на  ${3000} порту`)
 })

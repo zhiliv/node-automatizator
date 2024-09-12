@@ -1,4 +1,5 @@
 import type { DeviceADB } from '../../types/Devices.js'
+import { Instance } from '../../types/Instances.js'
 import type { Message } from '../../types/Message.js'
 import { getRandomNumberScript, getRandom } from './utils.js'
 import fs from 'fs'
@@ -7,8 +8,9 @@ import { PythonShell } from 'python-shell'
 /**
 ** Генерация скриптов для эмулятора
 * @function generateScripts
+* @param {isCreate | isCheck} options - вариант выбора скрипта
 */
-export const generateScripts = async (options: string, device: DeviceADB): Promise<string> => {
+export const generateScripts = async (options: 'isCreate' | 'isCheck', instance: Instance): Promise<string> => {
   const scriptName = getRandom()
   
   /** 
@@ -20,18 +22,16 @@ export const generateScripts = async (options: string, device: DeviceADB): Promi
     try {
       await fs.unlinkSync(`${fileName}.py`)
     } catch (err) {
-      console.log(err)
+      
     }
   }
-  
-  
   
   // script += `\ndevice.press.home()`
   //script += '\ndevice.press.back()'
   return new Promise(async (resolve, reject) => {
     let script: string = 'from uiautomator2 import Device'
     script += '\nimport time'
-    script += `\ndevice = Device('${device.address}')`
+    script += `\ndevice = Device('127.0.0.1:${instance.adb_port}')`
     
     /* Скрипт для выбора поля ввода контакта */
     if (options === 'isCreate') {
@@ -45,8 +45,9 @@ export const generateScripts = async (options: string, device: DeviceADB): Promi
     if (options === 'isCheck') {
       script += `\ntime.sleep(${getRandomNumberScript(1000, 2000)})` // Установка задержки
       // script
-      script += `\nprint(device.xpath("//android.widget.ListView/android.widget.RelativeLayout[@index='4']/android.widget.LinearLayout[@index='2']/android.widget.Button[@index='0']").exists)`
+      script += `\nprint(device.xpath("//android.widget.Button[@text='ПРИГЛАСИТЬ']").exists)`
     }
+    
     
     setTimeout(async () => {
       

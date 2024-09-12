@@ -54,8 +54,15 @@ export const getRandom = (): string => {
   return String(num)
 }
 
+/** 
+** Валидация номера телефона
+* @function validatePhone
+* @param {number} phoneNumber - номер телефона
+*/
 export const validatePhone = (phoneNumber: number) =>  {
   const phonePattern = /^7\d{10}$/
   const phone = String(phoneNumber)
   return phonePattern.test(phone)
 }
+
+export const isDev = process.env?.npm_lifecycle_script?.indexOf('isDev=true') < 0 ? false : true // признак запуска проекта в режиме разработки

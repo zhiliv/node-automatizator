@@ -10,8 +10,9 @@ import { ChildProcess } from 'child_process'
 export const execCLI = async (command: string): Promise<string> => {
   let result: string = ''
   return new Promise((resolve, reject) => {
-    const childProcess: ChildProcess = exec(command)
-
+    const childProcess: ChildProcess = exec(command, { encoding: 'latin1' })
+    
+    
     childProcess.stderr.on('data', (data: string) => {
       reject(data)
     })
@@ -20,12 +21,12 @@ export const execCLI = async (command: string): Promise<string> => {
       result += data
     })
 
-    childProcess.on('close', () => {
+    childProcess.on('close', (data) => {
       resolve(result)
     })
 
     childProcess.on('error', (error: any) => {
-      reject(error.toString())
+      reject()
     })
   })
 }

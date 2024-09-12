@@ -8,18 +8,18 @@ import { exec } from 'child_process';
 export const execCLI = async (command) => {
     let result = '';
     return new Promise((resolve, reject) => {
-        const childProcess = exec(command);
+        const childProcess = exec(command, { encoding: 'latin1' });
         childProcess.stderr.on('data', (data) => {
             reject(data);
         });
         childProcess.stdout.on('data', (data) => {
             result += data;
         });
-        childProcess.on('close', () => {
+        childProcess.on('close', (data) => {
             resolve(result);
         });
         childProcess.on('error', (error) => {
-            reject(error.toString());
+            reject();
         });
     });
 };

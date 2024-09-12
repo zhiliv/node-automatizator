@@ -1,4 +1,3 @@
-const isDev = process.env?.npm_lifecycle_script?.indexOf('isDev=true') < 0 ? false : true; // признак запуска проекта в режиме разработки
 export const authRoute = (req, res, next) => {
     let query = null;
     query = JSON.stringify(req.query) === '{}' ? req.body : req.query;

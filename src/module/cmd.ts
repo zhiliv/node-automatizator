@@ -10,7 +10,7 @@ import { ChildProcess } from 'child_process'
 export const execCLI = async (command: string): Promise<string> => {
   let result: string = ''
   return new Promise((resolve, reject) => {
-    const childProcess: ChildProcess = exec(command, { encoding: 'latin1' })
+    const childProcess: ChildProcess = exec(command, { encoding: 'utf8' })
     
     
     childProcess.stderr.on('data', (data: string) => {

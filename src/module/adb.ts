@@ -313,10 +313,10 @@ export const connectADB = async (port: number, count: number = 0): Promise<boole
  ** Удаление всех контактов
  * @function remoteAllContats
  */
-export const remoteAllContats = async () => {
+export const remoteAllContats = async (instance: Instance) => {
   return new Promise(async (resolve, reject) => {
     try {
-      await execCLI('adb shell pm clear com.android.providers.contacts')
+      await execCLI(`adb -s 127.0.0.1:${instance.adb_port} shell pm clear com.android.providers.contacts`)
       resolve(true)
     } catch (err) {
       reject(false)

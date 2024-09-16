@@ -37,10 +37,10 @@ export const getRandomNumber = (min: number, max: number): number => Math.floor(
 
 /**
  ** Проверка существования контакта в whatsapp
- * @function checkContact
+ * @function checkElementBool
  * @param {string} resultCheck - результат проверки на устройстве
  */
-export const checkContact = (resultCheck: string): boolean => {
+export const checkElementBool = (resultCheck: string): boolean => {
   if (!resultCheck.length) return true
   return resultCheck.indexOf('True') !== -1 ? false : true
 }

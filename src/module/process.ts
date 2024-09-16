@@ -19,7 +19,7 @@ import type { DeviceADB } from '../../types/Devices.js'
 import type { Message } from '../../types/Message.js'
 import type { Instance } from '../../types/Instances.js'
 import { generateScripts } from './run_py.js'
-import { checkContact } from './utils.js'
+import { checkElementBool } from './utils.js'
 import { getLastProneQueue } from './redis.js'
 import { tapCoordinates } from './adb.js'
 import { execCLI } from './cmd.js'
@@ -28,6 +28,7 @@ import {insertCheckWhatsapp} from './pg.js'
 
 const params = workerData
 const data: {phone: number, } = await getLastProneQueue()
+console.log("🚀 -> data:", data)
 
 if(data && data.phone && +data.phone > 79000000000){
  try {
@@ -52,25 +53,32 @@ if(data && data.phone && +data.phone > 79000000000){
 
      try {
      } catch (err) {}
+     const checkBlocked: boolean = await generateScripts('isBlocked', params.instance) // Проверка блокировки
+     
+     
      await generateScripts('isCreate', params.instance)
      await sendEventKey(String(+data.phone), params.instance)
      const checkPhone: string = await generateScripts('isCheck', params.instance) // генерация скрипта для проверки наличия есть ли данный контакт в whatsapp
-     const check: boolean = checkContact(checkPhone)
+     const check: boolean = checkElementBool(checkPhone)
      await killAppWhatsapp(params.instance).catch()
-     console.log('🚀 -> check:', check)
+     
      await insertCheckWhatsapp(+data.phone, check, params.instance.id)
-     parentPort.postMessage(true)
+     //parentPort.postMessage(true)
+     //process.exit()
    }
  } catch (err) {
    console.error(`Произошла ошибка: ${err}`)
-   parentPort.postMessage(err)
+   // parentPort.postMessage(err)
+   
  }   
 }
-else{
+else{1
   await insertCheckWhatsapp(+data.phone, false, params.instance.id)
-  parentPort.postMessage(true)
+  //parentPort.postMessage(true)
+  //process.exit()
 }
 
+process.exit()
 //const phone = 79087868908
 
 //await insertCheckWhatsapp(phone, true, params.instance.id)
@@ -133,7 +141,7 @@ if (message) {
     await sendEventKey(message.phone, device) // Поиск номера телефона в списке контактов в whatsapp
 
     const checkPhone: string = await generateScripts('isCheck', device) // генерация скрипта для проверки наличия есть ли данный контакт в whatsapp
-    const check = checkContact(checkPhone)
+    const check = checkElementBool(checkPhone)
 
     if (check) {
       await tapCoordinates(device, 580, 306) // выбор контакта

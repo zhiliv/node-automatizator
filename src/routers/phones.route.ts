@@ -12,7 +12,7 @@ import {
   getDevicesADB,
 } from './../module/adb.js'
 import { generateScripts } from './../module/run_py.js'
-import { checkContact, validatePhone } from './../module/utils.js'
+import { checkElementBool, validatePhone } from './../module/utils.js'
 import { redis } from './../module/redis.js'
 import moment from 'moment'
 
@@ -103,7 +103,7 @@ const setFreeDevice = (devices: DeviceADB[], index: number): Promise<boolean> =>
       await sendEventKey(String(phone), device) // Поиск номера телефона в списке контактов в whatsapp
       
       const checkPhone: string = await generateScripts('isCheck', device) // генерация скрипта для проверки наличия есть ли данный контакт в whatsapp
-      const check = checkContact(checkPhone)
+      const check = checkElementBool(checkPhone)
       resolve(check)
     } catch (err: any) {
       reject(`Ошибка при проверка наличия зарегистрированного контакта в whatsapp: ${err}`)

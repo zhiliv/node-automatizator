@@ -6,6 +6,7 @@ import { getLastProneQueue } from './redis.js';
 import { insertCheckWhatsapp } from './pg.js';
 const params = workerData;
 const data = await getLastProneQueue();
+console.log("🚀 -> data:", data);
 if (data && data.phone && +data.phone > 79000000000) {
     try {
         //await setInstanceDB()
@@ -33,20 +34,23 @@ if (data && data.phone && +data.phone > 79000000000) {
             const checkPhone = await generateScripts('isCheck', params.instance); // генерация скрипта для проверки наличия есть ли данный контакт в whatsapp
             const check = checkContact(checkPhone);
             await killAppWhatsapp(params.instance).catch();
-            console.log('🚀 -> check:', check);
             await insertCheckWhatsapp(+data.phone, check, params.instance.id);
-            parentPort.postMessage(true);
+            //parentPort.postMessage(true)
+            //process.exit()
         }
     }
     catch (err) {
         console.error(`Произошла ошибка: ${err}`);
-        parentPort.postMessage(err);
+        // parentPort.postMessage(err)
     }
 }
 else {
+    1;
     await insertCheckWhatsapp(+data.phone, false, params.instance.id);
-    parentPort.postMessage(true);
+    //parentPort.postMessage(true)
+    //process.exit()
 }
+process.exit();
 //const phone = 79087868908
 //await insertCheckWhatsapp(phone, true, params.instance.id)
 //await startInstances()

@@ -8,7 +8,7 @@ import { exec } from 'child_process';
 export const execCLI = async (command) => {
     let result = '';
     return new Promise((resolve, reject) => {
-        const childProcess = exec(command, { encoding: 'latin1' });
+        const childProcess = exec(command, { encoding: 'utf8' });
         childProcess.stderr.on('data', (data) => {
             reject(data);
         });

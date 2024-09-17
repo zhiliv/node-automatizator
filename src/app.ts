@@ -18,35 +18,27 @@ function delay(timeout) {
  * @function startProcessWorker
  * @return {Promise<void>}
  */
-async function startProcessWorker(){
+async function startProcessWorker(instanceControl?: Instance) {
+  await setInstanceDB()
+  let instances: Instance[] = await getInstancesDB()
+  // instances = instances.filter((instance: Instance) => instance.isWhatsappBan === false) // Получение незабанненных устройств
+  console.log("🚀 -> startProcessWorker -> instances:", instances)
   
-    await setInstanceDB()
-    const instances: Instance[] = await getInstancesDB()
-    await startInstances(instances[0])
 
+  for await (let instance of instances){
+    await startInstances(instance)
     const worker: Worker = new Worker('./dist/src/module/process.js', {
       workerData: {
-        instance: instances[0],
+        instance: instanceControl ? instanceControl : instance,
       },
-    })
-    worker.on('message', (data: string | boolean) => {
-      /* if (data === null) {
-        
-        return
-      }
-      if(data === true){
-      return delay(1).then(function () {
-        process.nextTick(startProcessWorker)
-      })
-      } */
     })
     worker.on('error', console.error)
     worker.on('exit', async () => {
       return delay(1).then(function () {
-        process.nextTick(startProcessWorker)
+        startProcessWorker(instance)
       })
     })
-  
+  }
 }
 
 startProcessWorker()

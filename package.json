@@ -30,7 +30,7 @@
     "uuid": "^10.0.0"
   },
   "scripts": {
-    "dev-process": "nodemon --exec \"tsc &&  node dist/src/app.js\"  isDev=true",
+    "dev-process": "nodemon --exec  \"tsc &&  node dist/src/app.js --inspect=0.0.0.0:9329 \"  isDev=true",
     "dev-server": "nodemon --exec \"tsc && node dist/src/http.js\"  isDev=true",
     "build": "tsc",
     "start-process": "pm2 start dist/src/app.js",

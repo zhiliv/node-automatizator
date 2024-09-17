@@ -10,7 +10,10 @@ import { PythonShell } from 'python-shell'
 * @function generateScripts
 * @param {isCreate | isCheck} options - вариант выбора скрипта
 */
-export const generateScripts = async (options: 'isCreate' | 'isCheck' | 'isBlocked', instance: Instance): Promise<string | boolean>  => {
+export const generateScripts = async (
+  options: 'isCreate' | 'isCheck' | 'isBlockedChecker' | 'isBlockedBan',
+  instance: Instance,
+): Promise<string | boolean> => {
   const scriptName = getRandom()
 
   /**
@@ -20,7 +23,7 @@ export const generateScripts = async (options: 'isCreate' | 'isCheck' | 'isBlock
    */
   const removeScript = async (fileName: string): Promise<void> => {
     try {
-      await fs.unlinkSync(`${fileName}.py`)
+      await fs.unlinkSync(`./py_scripts/${fileName}.py`)
     } catch (err) {}
   }
 
@@ -42,32 +45,35 @@ export const generateScripts = async (options: 'isCreate' | 'isCheck' | 'isBlock
 
     if (options === 'isCheck') {
       script += `\ntime.sleep(${getRandomNumberScript(1000, 2000)})` // Установка задержки
-      // script
       script += `\nprint(device.xpath("//android.widget.Button[@text='ПРИГЛАСИТЬ']").exists)`
     }
 
-    if (options === 'isBlocked') {
+    if (options === 'isBlockedChecker') {
       script += `\ntime.sleep(${getRandomNumberScript(1000, 2000)})` // Установка задержки
-      // script
       script += `\nprint(device.xpath("//android.widget.TextView[@text='Этот аккаунт больше не может использовать WhatsApp']").exists)`
     }
 
+    if (options === 'isBlockedBan') {
+      script += `\ntime.sleep(${getRandomNumberScript(1000, 2000)})` // Установка задержки
+      // script
+      script += `\nprint(device.xpath("//android.widget.TextView[@text='Этот аккаунт больше не может использовать WhatsApp в связи с рассылкой спама']").exists)`
+    }
+    
     setTimeout(async () => {
       try {
-        await fs.writeFileSync(`./${scriptName}.py`, script)
-        const res: string = String(await PythonShell.run(`${scriptName}.py`, null))
+        await fs.writeFileSync(`./py_scripts/${scriptName}.py`, script)
+        const res: string = String(await PythonShell.run(`py_scripts/${scriptName}.py`, null))
         // await fs.unlinkSync(`${scriptName}.py`)
         await removeScript(scriptName)
-        
-        if(options === 'isBlocked' || options === 'isCheck') {
-          resolve(await checkElementBool(res))
-        }
-        else{
+
+        if (options === 'isBlockedChecker' || options === 'isCheck') {
+          resolve(checkElementBool(res))
+        } else {
           resolve(res)
         }
         resolve(res)
       } catch (err: any) {
-        //await removeScript(scriptName)
+        await removeScript(scriptName)
         reject(`Ошибка при выполнении скрипта python: ${err}`)
       }
     }, 80)

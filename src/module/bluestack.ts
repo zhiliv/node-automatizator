@@ -80,7 +80,7 @@ export const getInstancesDB = async (): Promise<Instance[]> => {
  ** Получение экземпляров эмулятора и запись в БД
  * @function setInstanceDB
  */
-export const setInstanceDB = async (): Promise<void> => {
+export const setInstanceDB = async (instanceControl?: Instance): Promise<void> => {
   const instances: Instance[] = getInstance()
   const instancesDB: Instance[] = await getInstancesDB()
   instances.forEach((instance: Instance) => {
@@ -88,6 +88,15 @@ export const setInstanceDB = async (): Promise<void> => {
       instancesDB.push(instance)
     }
   })
+  
+  if (instanceControl) {
+    const index: number = instances.findIndex((instance: Instance) => instance.id === instanceControl.id)
+    console.log("🚀 -> setInstanceDB -> index:", index)
+    if(index !== -1){
+      instances[index].isWhatsappBan = instanceControl.isWhatsappBan
+      instances[index].isTelegramBan = instanceControl.isTelegramBan
+    }
+  }
   await redis.set('instances', JSON.stringify(instances))
 }
 
@@ -109,7 +118,7 @@ export const getNotActiveInstances = async (): Promise<Instance[]> => {
  */
 export const startInstances = async (instance: Instance): Promise<void> => {
   try {
-    await execCLI(`"C:/Program Files/BlueStacks_nxt/HD-Player.exe" --instance ${instance}`).catch()
+    await execCLI(`"C:/Program Files/BlueStacks_nxt/HD-Player.exe" --instance ${instance.id}`).catch()
   } catch (err) {
   }
 }

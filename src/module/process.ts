@@ -14,6 +14,7 @@ import {
   sendEventKey,
   killADB,
   connectADB,
+  checkRunWhatsapp,
 } from './adb.js'
 import type { DeviceADB } from '../../types/Devices.js'
 import type { Message } from '../../types/Message.js'
@@ -24,66 +25,64 @@ import { getLastProneQueue } from './redis.js'
 import { tapCoordinates } from './adb.js'
 import { execCLI } from './cmd.js'
 import { setInstanceDB, getInstancesDB, startInstances } from './bluestack.js'
-import {insertCheckWhatsapp} from './pg.js'
+import { insertCheckWhatsapp } from './pg.js'
 
 const params = workerData
-const data: {phone: number, } = await getLastProneQueue()
-console.log("🚀 -> data:", data)
+//const data: { phone: number } = await getLastProneQueue()
 
-if(data && data.phone && +data.phone > 79000000000){
- try {
-   //await setInstanceDB()
-   //const instances: Instance[] = await getInstancesDB()
-   //await startInstances(instances[0])
+const data: { phone: number } = {phone: 79087868909}
 
-   const connect: boolean = await connectADB(params.instance.adb_port).catch()
-   if (connect === true) {
-     const contacts: any = await getAllContacts(params.instance).catch((err) => parentPort.postMessage(err))
-     if ((contacts && !contacts.length) || contacts.findIndex((el) => +el.number === +data.phone) === -1) {
-       await addContact(params.instance, +data.phone)
-     }
+if (data && data.phone && +data.phone > 79000000000) {
+  try {
+    //await setInstanceDB()
+    //const instances: Instance[] = await getInstancesDB()
+    //await startInstances(instances[0])
 
-     try {
-       await killAppContact(params.instance).catch()
-     } catch (err) {}
+    const connect: boolean = await connectADB(params.instance.adb_port).catch()
+    if (connect === true) {
+      const contacts: any = await getAllContacts(params.instance).catch((err) => parentPort.postMessage(err))
+      if ((contacts && !contacts.length) || contacts.findIndex((el) => +el.number === +data.phone) === -1) {
+        await addContact(params.instance, +data.phone)
+      }
 
-     try {
-       await runWhatsapp(params.instance)
-     } catch (err) {}
+      try {
+        await killAppContact(params.instance).catch()
+      } catch (err) {}
 
-     try {
-     } catch (err) {}
-     const checkBlocked: boolean = await generateScripts('isBlocked', params.instance) // Проверка блокировки
-     
-     
-     await generateScripts('isCreate', params.instance)
-     await sendEventKey(String(+data.phone), params.instance)
-     const checkPhone: string = await generateScripts('isCheck', params.instance) // генерация скрипта для проверки наличия есть ли данный контакт в whatsapp
-     const check: boolean = checkElementBool(checkPhone)
-     await killAppWhatsapp(params.instance).catch()
-     
-     await insertCheckWhatsapp(+data.phone, check, params.instance.id)
-     //parentPort.postMessage(true)
-     //process.exit()
-   }
- } catch (err) {
-   console.error(`Произошла ошибка: ${err}`)
-   // parentPort.postMessage(err)
-   
- }   
-}
-else{1
+      try {
+        //if (await !checkRunWhatsapp(params.instance)) {
+          await runWhatsapp(params.instance)
+        // }
+      } catch (err) {}
+
+      try {
+      } catch (err) {}
+      const isBlockedChecker: boolean | string = await generateScripts('isBlockedChecker', params.instance) // Проверка блокировки
+      const isBlockedBan: boolean | string = await generateScripts('isBlockedBan', params.instance) // Проверка блокировки
+      if (!isBlockedChecker && !isBlockedBan) {
+        await generateScripts('isCreate', params.instance)
+        await sendEventKey(String(+data.phone), params.instance)
+        const check: boolean | string = await generateScripts('isCheck', params.instance) // генерация скрипта для проверки наличия есть ли данный контакт в whatsapp
+        const checkPhone: boolean = !check
+        await insertCheckWhatsapp(+data.phone, checkPhone, params.instance.id)
+      }
+      else{
+        params.instance.isWhatsappBan = true
+        await setInstanceDB(params.instance)
+        console.error('Устройство заблокировано')
+      }
+    }
+  } catch (err) {
+    console.error(`Произошла ошибка: ${err}`)
+  }
+} else {
   await insertCheckWhatsapp(+data.phone, false, params.instance.id)
-  //parentPort.postMessage(true)
-  //process.exit()
 }
 
 process.exit()
 //const phone = 79087868908
 
 //await insertCheckWhatsapp(phone, true, params.instance.id)
-
-
 
 //await startInstances()
 

@@ -9,7 +9,7 @@ import { getRandomName, getRandomNumber } from './utils.js';
 export const getDevicesADB = async (devicesFile) => {
     return new Promise(async (resolve, reject) => {
         try {
-            const devicesStr = await execCLI('adb devices').catch();
+            const devicesStr = await execCLI('adb devices');
             if (devicesStr === 'List of devices attached') {
                 resolve([]);
             }
@@ -205,7 +205,7 @@ export const sendEventKey = async (text, instance) => {
             setTimeout(async () => {
                 try {
                     //await execCLI(`adb -s 127.0.0.1:${instance.adb_port} shell ime enable com.android.adbkeyboard/.AdbIME`)
-                    const test = await execCLI(`adb -s 127.0.0.1:${instance.adb_port} shell am broadcast -a ADB_INPUT_TEXT --es msg '${char}'`);
+                    await execCLI(`adb -s 127.0.0.1:${instance.adb_port} shell am broadcast -a ADB_INPUT_TEXT --es msg '${char}'`);
                     resolve(true);
                 }
                 catch (err) {
@@ -284,14 +284,32 @@ export const connectADB = async (port, count = 0) => {
  ** Удаление всех контактов
  * @function remoteAllContats
  */
-export const remoteAllContats = async () => {
+export const remoteAllContats = async (instance) => {
     return new Promise(async (resolve, reject) => {
         try {
-            await execCLI('adb shell pm clear com.android.providers.contacts');
+            await execCLI(`adb -s 127.0.0.1:${instance.adb_port} shell pm clear com.android.providers.contacts`);
             resolve(true);
         }
         catch (err) {
             reject(false);
+        }
+    });
+};
+/**
+ ** Проверка запущенного приложения Whatsapp
+ * @function checkRunWhatsapp
+ */
+export const checkRunWhatsapp = async (instance) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const result = await execCLI(`adb -s 127.0.0.1:${instance.adb_port} shell pgrep com.whatsapp`);
+            if (result === '')
+                resolve(false);
+            else
+                resolve(true);
+        }
+        catch (err) {
+            reject(err);
         }
     });
 };

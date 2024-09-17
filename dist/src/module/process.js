@@ -1,12 +1,11 @@
 import { parentPort, workerData } from 'worker_threads';
-import { killAppWhatsapp, killAppContact, getAllContacts, addContact, runWhatsapp, sendEventKey, connectADB, } from './adb.js';
+import { killAppContact, getAllContacts, addContact, runWhatsapp, sendEventKey, connectADB, } from './adb.js';
 import { generateScripts } from './run_py.js';
-import { checkContact } from './utils.js';
-import { getLastProneQueue } from './redis.js';
+import { setInstanceDB } from './bluestack.js';
 import { insertCheckWhatsapp } from './pg.js';
 const params = workerData;
-const data = await getLastProneQueue();
-console.log("🚀 -> data:", data);
+//const data: { phone: number } = await getLastProneQueue()
+const data = { phone: 79087868909 };
 if (data && data.phone && +data.phone > 79000000000) {
     try {
         //await setInstanceDB()
@@ -23,32 +22,36 @@ if (data && data.phone && +data.phone > 79000000000) {
             }
             catch (err) { }
             try {
+                //if (await !checkRunWhatsapp(params.instance)) {
                 await runWhatsapp(params.instance);
+                // }
             }
             catch (err) { }
             try {
             }
             catch (err) { }
-            await generateScripts('isCreate', params.instance);
-            await sendEventKey(String(+data.phone), params.instance);
-            const checkPhone = await generateScripts('isCheck', params.instance); // генерация скрипта для проверки наличия есть ли данный контакт в whatsapp
-            const check = checkContact(checkPhone);
-            await killAppWhatsapp(params.instance).catch();
-            await insertCheckWhatsapp(+data.phone, check, params.instance.id);
-            //parentPort.postMessage(true)
-            //process.exit()
+            const isBlockedChecker = await generateScripts('isBlockedChecker', params.instance); // Проверка блокировки
+            const isBlockedBan = await generateScripts('isBlockedBan', params.instance); // Проверка блокировки
+            if (!isBlockedChecker && !isBlockedBan) {
+                await generateScripts('isCreate', params.instance);
+                await sendEventKey(String(+data.phone), params.instance);
+                const check = await generateScripts('isCheck', params.instance); // генерация скрипта для проверки наличия есть ли данный контакт в whatsapp
+                const checkPhone = !check;
+                await insertCheckWhatsapp(+data.phone, checkPhone, params.instance.id);
+            }
+            else {
+                params.instance.isWhatsappBan = true;
+                await setInstanceDB(params.instance);
+                console.error('Устройство заблокировано');
+            }
         }
     }
     catch (err) {
         console.error(`Произошла ошибка: ${err}`);
-        // parentPort.postMessage(err)
     }
 }
 else {
-    1;
     await insertCheckWhatsapp(+data.phone, false, params.instance.id);
-    //parentPort.postMessage(true)
-    //process.exit()
 }
 process.exit();
 //const phone = 79087868908
@@ -108,7 +111,7 @@ if (message) {
     await sendEventKey(message.phone, device) // Поиск номера телефона в списке контактов в whatsapp
 
     const checkPhone: string = await generateScripts('isCheck', device) // генерация скрипта для проверки наличия есть ли данный контакт в whatsapp
-    const check = checkContact(checkPhone)
+    const check = checkElementBool(checkPhone)
 
     if (check) {
       await tapCoordinates(device, 580, 306) // выбор контакта

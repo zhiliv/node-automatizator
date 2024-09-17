@@ -13,7 +13,7 @@ import { Instance } from '../../types/Instances.js'
 export const getDevicesADB = async (devicesFile: DeviceADB[]): Promise<DeviceADB[] | void> => {
   return new Promise(async (resolve, reject) => {
     try {
-      const devicesStr: String = await execCLI('adb devices').catch()
+      const devicesStr: String = await execCLI('adb devices')
       if (devicesStr === 'List of devices attached') {
         resolve([])
       }
@@ -22,7 +22,6 @@ export const getDevicesADB = async (devicesFile: DeviceADB[]): Promise<DeviceADB
         .filter((el) => el !== 'List of devices attached \r')
         .map((el) => el.replace('\tdevice\r', ''))
         .filter((el) => el !== '\r' && el !== '')
-      
 
       devices.forEach((el: string) => {
         const index: number = devicesFile.findIndex((dev) => dev.address === el)
@@ -96,7 +95,6 @@ export const getAllContacts = (instance: Instance): Promise<any> => {
         `adb -s 127.0.0.1:${instance.adb_port} shell content query --uri content://contacts/phones/`,
       )
 
-      
       contactsStr = contactsStr.trim()
       const result: string[] = []
 
@@ -127,7 +125,7 @@ export const getAllContacts = (instance: Instance): Promise<any> => {
         })
         result.push(obj)
       })
-      
+
       resolve(result)
     } catch (err: any) {
       reject(`Ошибка при получении списка контактов: ${err}`)
@@ -230,7 +228,7 @@ export const sendEventKey = async (text: string, instance: Instance): Promise<bo
         async () => {
           try {
             //await execCLI(`adb -s 127.0.0.1:${instance.adb_port} shell ime enable com.android.adbkeyboard/.AdbIME`)
-            const test = await execCLI(
+            await execCLI(
               `adb -s 127.0.0.1:${instance.adb_port} shell am broadcast -a ADB_INPUT_TEXT --es msg '${char}'`,
             )
             resolve(true)
@@ -320,6 +318,22 @@ export const remoteAllContats = async (instance: Instance) => {
       resolve(true)
     } catch (err) {
       reject(false)
+    }
+  })
+}
+
+/**
+ ** Проверка запущенного приложения Whatsapp
+ * @function checkRunWhatsapp
+ */
+export const checkRunWhatsapp = async (instance: Instance): Promise<boolean> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const result = await execCLI(`adb -s 127.0.0.1:${instance.adb_port} shell pgrep com.whatsapp`)
+      if (result === '') resolve(false)
+      else resolve(true)
+    } catch (err) {
+      reject(err)
     }
   })
 }

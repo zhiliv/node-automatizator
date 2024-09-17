@@ -42,7 +42,7 @@ export const getRandomNumber = (min: number, max: number): number => Math.floor(
  */
 export const checkElementBool = (resultCheck: string): boolean => {
   if (!resultCheck.length) return true
-  return resultCheck.indexOf('True') !== -1 ? false : true
+  return resultCheck.indexOf('True') !== -1 ? true : false
 }
 
 /**

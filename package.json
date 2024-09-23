@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@types/pg": "^8.11.9",
+    "adbkit": "^2.11.1",
     "body-parser": "^1.20.2",
     "chalk": "^5.3.0",
     "cors": "^2.8.5",
@@ -32,6 +33,7 @@
   "scripts": {
     "dev-process": "nodemon --exec  \"tsc &&  node dist/src/app.js --inspect=0.0.0.0:9329 \"  isDev=true",
     "dev-server": "nodemon --exec \"tsc && node dist/src/http.js\"  isDev=true",
+    "dev-test": "nodemon --exec  \"tsc &&  node dist/src/test.js --inspect=0.0.0.0:9329 \"  isDev=true",
     "build": "tsc",
     "start-process": "pm2 start dist/src/app.js",
     "start-server": "pm2 start dist/src/http.js"

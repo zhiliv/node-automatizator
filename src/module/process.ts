@@ -12,7 +12,6 @@ import {
   addContact,
   runWhatsapp,
   sendEventKey,
-  killADB,
   connectADB,
   checkRunWhatsapp,
 } from './adb.js'
@@ -28,35 +27,28 @@ import { setInstanceDB, getInstancesDB, startInstances } from './bluestack.js'
 import { insertCheckWhatsapp } from './pg.js'
 
 const params = workerData
+const instance: Instance = params.instance
 //const data: { phone: number } = await getLastProneQueue()
 
 const data: { phone: number } = {phone: 79087868909}
 
 if (data && data.phone && +data.phone > 79000000000) {
   try {
-    //await setInstanceDB()
-    //const instances: Instance[] = await getInstancesDB()
-    //await startInstances(instances[0])
-
-    const connect: boolean = await connectADB(params.instance.adb_port).catch()
-    if (connect === true) {
-      const contacts: any = await getAllContacts(params.instance).catch((err) => parentPort.postMessage(err))
+    const connect: string = await connectADB(instance)
+    if(connect === `127.0.0.1:${instance.adb_port}`){
+      const contacts: any = await getAllContacts(instance)
       if ((contacts && !contacts.length) || contacts.findIndex((el) => +el.number === +data.phone) === -1) {
-        await addContact(params.instance, +data.phone)
+        await addContact(instance, +data.phone)
       }
-
-      try {
-        await killAppContact(params.instance).catch()
-      } catch (err) {}
-
-      try {
-        //if (await !checkRunWhatsapp(params.instance)) {
-          await runWhatsapp(params.instance)
-        // }
-      } catch (err) {}
-
-      try {
-      } catch (err) {}
+      await killAppContact(instance)
+      
+      if(await checkRunWhatsapp(instance) === false){
+        await runWhatsapp(instance)
+      }
+    }
+    
+    
+    //const connect: boolean = await connectADB(params.instance.adb_port)
       const isBlockedChecker: boolean | string = await generateScripts('isBlockedChecker', params.instance) // Проверка блокировки
       const isBlockedBan: boolean | string = await generateScripts('isBlockedBan', params.instance) // Проверка блокировки
       if (!isBlockedChecker && !isBlockedBan) {
@@ -71,7 +63,7 @@ if (data && data.phone && +data.phone > 79000000000) {
         await setInstanceDB(params.instance)
         console.error('Устройство заблокировано')
       }
-    }
+    
   } catch (err) {
     console.error(`Произошла ошибка: ${err}`)
   }

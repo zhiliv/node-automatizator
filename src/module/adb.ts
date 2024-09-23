@@ -1,48 +1,62 @@
 import { execCLI } from './cmd.js'
 import fs from 'fs'
 import { v4 as uuidv4 } from 'uuid'
-import type { DeviceADB } from './../../types/Devices.js'
-import { Message } from '../../types/Message.js'
 import { getRandomName, getRandomNumber } from './utils.js'
 import { Instance } from '../../types/Instances.js'
+import { Adb_device } from './../../types/ADB.js'
+import adb from 'adbkit'
+
+export const clientADB = adb.createClient()
+
+/** 
+** Подключение устройства по adb
+* @async
+* @function connect
+* @param {Instance} instance - экземпляр эмулятора
+* @result - 127.0.0.1:adb_port
+*/
+export const connectADB = async (instance: Instance): Promise<string> => {
+  return new Promise(async(resolve, reject) => {
+    try{
+      const result: string = await clientADB.connect('127.0.0.1', instance.adb_port)      
+      resolve(result)
+    }
+    catch(err: any){
+      reject(err.toString())
+    }
+  })
+}
+
+/**  
+** Отключение от устройства adb
+* @async
+* @function disconnect
+* @param {Instance} instance - экземпляр эмулятора
+*/
+export const disconnect = async (instance: Instance): Promise<String> => {
+  return new Promise(async(resolve, reject) => {
+    try{
+      const result: String = await clientADB.disconnect('127.0.0.1', instance.adb_port)
+      resolve(result)
+    }
+    catch(err: any){
+      reject(err.toString())
+    }
+  })
+}
+
 
 /**
  ** Получение списка устройств adb
  * @function getDevicesADB
  */
-export const getDevicesADB = async (devicesFile: DeviceADB[]): Promise<DeviceADB[] | void> => {
+export const getDevicesADB = async (): Promise<Adb_device[]> => {
   return new Promise(async (resolve, reject) => {
     try {
-      const devicesStr: String = await execCLI('adb devices')
-      if (devicesStr === 'List of devices attached') {
-        resolve([])
-      }
-      const devices: string[] = devicesStr
-        .split('\n')
-        .filter((el) => el !== 'List of devices attached \r')
-        .map((el) => el.replace('\tdevice\r', ''))
-        .filter((el) => el !== '\r' && el !== '')
-
-      devices.forEach((el: string) => {
-        const index: number = devicesFile.findIndex((dev) => dev.address === el)
-        if (index === -1) {
-          devicesFile.push({ address: el, count: 0, last_send: null, id: uuidv4(), status: 'free' })
-        }
-      })
-
-      devicesFile.forEach((el: DeviceADB, ind: number) => {
-        const index: number = devices.findIndex((dev) => dev === el.address)
-        if (index === -1) {
-          devicesFile.splice(ind, 1)
-        }
-      })
-
-      await fs.writeFileSync('./dist/devices.json', JSON.stringify(devicesFile))
-      const result: DeviceADB[] = JSON.parse(await fs.readFileSync('./dist/devices.json').toString())
-
+      const result: Adb_device[] = await clientADB.listDevices()
       resolve(result)
-    } catch (err) {
-      reject(`Ошибка при получении списка устройств ADB: ${err}`)
+    } catch (err: any) {
+      reject(err.toString())
     }
   })
 }
@@ -52,14 +66,19 @@ export const getDevicesADB = async (devicesFile: DeviceADB[]): Promise<DeviceADB
  * @function killAppWhatsapp
  * @param {Instance} instance - экземпляр эмулятора
  */
-export const killAppWhatsapp = (instance: Instance): Promise<boolean> => {
+export const killAppWhatsapp = (instance: Instance): Promise<string> => {
   return new Promise(async (resolve, reject) => {
     setTimeout(async () => {
-      try {
-        await execCLI(`adb -s 127.0.0.1:${instance.adb_port} shell am force-stop com.whatsapp`).catch()
-        resolve(true)
-      } catch (err: any) {
-        reject(`Ошибка при завершении приложения Whatsapp: ${err}`)
+      try{
+      await clientADB
+        .shell(`127.0.0.1:${instance.adb_port}`, 'am force-stop com.whatsapp')
+        .then(adb.util.readAll)
+        .then((output:any) =>  {
+          resolve(`127.0.0.1:${instance.adb_port} ${output.toString().trim()}`)
+        })  
+      }
+      catch(err){
+        reject(err.toString())
       }
     }, 500)
   })
@@ -70,14 +89,18 @@ export const killAppWhatsapp = (instance: Instance): Promise<boolean> => {
  * @function killAllApp
  * @param {Instance} instance - экземпляр эмулятора
  */
-export const killAppContact = (instance: Instance): Promise<boolean> => {
+export const killAppContact = (instance: Instance): Promise<string> => {
   return new Promise(async (resolve, reject) => {
     setTimeout(async () => {
       try {
-        await execCLI(`adb -s 127.0.0.1:${instance.adb_port} shell am force-stop com.android.contacts`)
-        resolve(true)
-      } catch (err: any) {
-        reject(`Ошибка при завершении приложения Contacts: ${err}`)
+        await clientADB
+          .shell(`127.0.0.1:${instance.adb_port}`, 'am force-stop com.android.contacts')
+          .then(adb.util.readAll)
+          .then((output: any) => {
+            resolve(`127.0.0.1:${instance.adb_port} ${output.toString().trim()}`)
+          })
+      } catch (err) {
+        reject(err.toString())
       }
     }, 500)
   })
@@ -88,48 +111,52 @@ export const killAppContact = (instance: Instance): Promise<boolean> => {
  * @function getAllContacts
  * @param {Instance} instance - экземпляр эмулятора
  */
-export const getAllContacts = (instance: Instance): Promise<any> => {
+export const getAllContacts = async(instance: Instance): Promise<any> => {
   return new Promise(async (resolve, reject) => {
-    try {
-      let contactsStr: string = await execCLI(
-        `adb -s 127.0.0.1:${instance.adb_port} shell content query --uri content://contacts/phones/`,
-      )
+  try {
+    await clientADB
+      .shell(`127.0.0.1:${instance.adb_port}`, 'content query --uri content://contacts/phones/')
+      .then(adb.util.readAll)
+      .then((output: any) => {
+        const contactsStr: string = output.toString().trim()
+        const result: string[] = []
 
-      contactsStr = contactsStr.trim()
-      const result: string[] = []
+        if (contactsStr === `No result found.`) {
+          resolve(result)
+          return result
+        }
 
-      if (contactsStr === `No result found.`) {
-        resolve(result)
-        return result
-      }
+        const contactsArr: string[][] = contactsStr
+          .split('\n')
+          .filter((el) => el !== '')
+          .map((el) => el.split(', '))
+        contactsArr.forEach((row, ind) => {
+          const obj: any = {}
+          obj.row = ind
+          row.forEach((el: any) => {
+            el = el.replace('\r', '')
+            const parts = el.split('=')
 
-      const contactsArr: string[][] = contactsStr
-        .split('\n')
-        .filter((el) => el !== '')
-        .map((el) => el.split(', '))
-      contactsArr.forEach((row, ind) => {
-        const obj: any = {}
-        obj.row = ind
-        row.forEach((el: any) => {
-          el = el.replace('\r', '')
-          const parts = el.split('=')
-
-          let key: string = parts[0]
-          let value: string = parts[1]
-          value = value.replace('\r', '')
-          // Создаем объект с ключом и значением
-          if (value === 'NULL') {
-            value = null
-          }
-          obj[key] = Number.isInteger(+value) ? +value : value
+            let key: string = parts[0]
+            let value: string = parts[1]
+            value = value.replace('\r', '')
+            // Создаем объект с ключом и значением
+            if (value === 'NULL') {
+              value = null
+            }
+            obj[key] = Number.isInteger(+value) ? +value : value
+          })
+          result.push(obj)
         })
-        result.push(obj)
+        
+        
+        resolve(result)
       })
-
-      resolve(result)
-    } catch (err: any) {
-      reject(`Ошибка при получении списка контактов: ${err}`)
-    }
+  } catch (err) {
+    reject(err.toString())
+  }  
+    
+    
   })
 }
 
@@ -140,16 +167,35 @@ export const getAllContacts = (instance: Instance): Promise<any> => {
  * @param {number} x - координата x
  * @param {number} y - координата y
  */
-export const tapCoordinates = (instance: Instance, x: number, y: number): Promise<boolean> => {
+export const tapCoordinates = (instance: Instance, x: number, y: number): Promise<string> => {
   return new Promise((resolve, reject) => {
     setTimeout(async () => {
       try {
-        await execCLI(`adb -s 127.0.0.1:${instance.adb_port} shell input tap ${x} ${y}`)
-        resolve(true)
-      } catch (err: any) {
-        reject(`Ошибка при тапе по координатам: ${err}`)
+        await clientADB
+          .shell(`127.0.0.1:${instance.adb_port}`, `input tap ${x} ${y}`)
+          .then(adb.util.readAll)
+          .then((output: any) => {
+            resolve(`127.0.0.1:${instance.adb_port} ${output.toString().trim()}`)
+          })
+      } catch (err) {
+        reject(err.toString())
       }
     }, 320)
+  })
+}
+
+export const startAppContact = (instance: Instance): Promise<any> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      await clientADB
+        .shell(`127.0.0.1:${instance.adb_port}`, 'monkey -p com.android.contacts -c android.intent.category.LAUNCHER 1')
+        .then(adb.util.readAll)
+        .then((output: any) => {
+          resolve(`127.0.0.1:${instance.adb_port} ${output.toString().trim()}`)
+        })
+    } catch (err) {
+      reject(err.toString())
+    }
   })
 }
 
@@ -159,22 +205,25 @@ export const tapCoordinates = (instance: Instance, x: number, y: number): Promis
  * @param {Instance} instance - экземпляр эмулятора
  * @param {object} phone - номер телефона
  */
-export const addContact = (instance: Instance, phone: number): Promise<boolean> => {
+export const addContact = (instance: Instance, phone: number): Promise<string> => {
+
+  
   /**
    ** Добавление номера в контакты через adb
    * @function insertContact
    */
-  const insertContact = (): Promise<boolean> => {
+  const insertContact = (): Promise<string> => {
     return new Promise(async (resolve, reject) => {
       setTimeout(async () => {
         try {
-          await execCLI(
-            `adb -s 127.0.0.1:${instance.adb_port} shell am start -a android.intent.action.INSERT -t vnd.android.cursor.dir/contact -e name '${getRandomName()}' -e phone ${phone}`,
-          ).catch()
-
-          resolve(true)
-        } catch (err: any) {
-          reject(`Ошибка при добавлении контакта: ${err}`)
+          await clientADB
+            .shell(`127.0.0.1:${instance.adb_port}`, `am start -a android.intent.action.INSERT -t vnd.android.cursor.dir/contact -e name '${getRandomName()}' -e phone ${phone}`)
+            .then(adb.util.readAll)
+            .then((output: any) => {
+              resolve(`127.0.0.1:${instance.adb_port} ${output.toString().trim()}`)
+            })
+        } catch (err) {
+          reject(err.toString())
         }
       }, 600)
     })
@@ -184,8 +233,9 @@ export const addContact = (instance: Instance, phone: number): Promise<boolean> 
     await insertContact().catch(() => reject)
     await tapCoordinates(instance, 773, 111).catch(() => reject)
     // await killAppContact(device)
-    resolve(true)
-  })
+    resolve('true')
+  }) 
+  
 }
 
 /**
@@ -193,18 +243,16 @@ export const addContact = (instance: Instance, phone: number): Promise<boolean> 
  * @function runWhatsapp
  * @param {Instance} instance - экземпляр эмулятора
  */
-export const runWhatsapp = (instance: Instance): Promise<boolean> => {
+export const runWhatsapp = (instance: Instance): Promise<string> => {
   return new Promise(async (resolve, reject) => {
     setTimeout(async () => {
-      try {
-        await execCLI(
-          `adb -s 127.0.0.1:${instance.adb_port} shell monkey -p com.whatsapp -c android.intent.category.LAUNCHER 1`,
-        ).catch()
-
-        resolve(true)
-      } catch (err: any) {
-        reject(`Ошибка при запуске приложения whatsapp: ${err}`)
-      }
+      await clientADB
+        .shell(`127.0.0.1:${instance.adb_port}`, `monkey -p com.whatsapp -c android.intent.category.LAUNCHER 1`)
+        .then(adb.util.readAll)
+        .then((output: any) => {
+          resolve(`127.0.0.1:${instance.adb_port} ${output.toString().trim()}`)
+        })
+        .catch((err) => reject(err.toString()))
     }, 1200)
   })
 }
@@ -226,15 +274,13 @@ export const sendEventKey = async (text: string, instance: Instance): Promise<bo
     return new Promise(async (resolve, reject) => {
       setTimeout(
         async () => {
-          try {
-            //await execCLI(`adb -s 127.0.0.1:${instance.adb_port} shell ime enable com.android.adbkeyboard/.AdbIME`)
-            await execCLI(
-              `adb -s 127.0.0.1:${instance.adb_port} shell am broadcast -a ADB_INPUT_TEXT --es msg '${char}'`,
-            )
-            resolve(true)
-          } catch (err: any) {
-            reject(`ошибка при отправке символа: ${err}`)
-          }
+          await clientADB
+            .shell(`127.0.0.1:${instance.adb_port}`, `am broadcast -a ADB_INPUT_TEXT --es msg '${char}'`)
+            .then(adb.util.readAll)
+            .then((output: any) => {
+              resolve(`127.0.0.1:${instance.adb_port} ${output.toString().trim()}`)
+            })
+            .catch(err => reject(err.toString()))
         },
         getRandomNumber(300, 1200),
       )
@@ -253,72 +299,18 @@ export const sendEventKey = async (text: string, instance: Instance): Promise<bo
 }
 
 /**
- ** Завершение ранее запущенных модулей adb
- * @function killADB
- */
-export const killADB = () => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const string: String = await execCLI('adb kill-server')
-      resolve(true)
-    } catch (err: any) {
-      if (err !== '* server not running *') console.error(`Ошибка при завершении процесса adb: ${err}`)
-
-      reject(false)
-    }
-  })
-}
-
-/**
- ** Подключение эмулятора по adb
- * @function connectADB
- * @param {number} port - порт эмулятора
- * @param {number} count - кол-во попыток подключения
- */
-export const connectADB = async (port: number, count: number = 0): Promise<boolean> => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      await execCLI(`adb disconnect 127.0.0.1:${port}`).catch()
-    } catch (err) {}
-
-    try {
-      const result: string = (await execCLI(`adb connect 127.0.0.1:${port}`)).trim()
-      if (result === `connected to 127.0.0.1:${port}`) {
-        console.log(`Эмулятор успешно подключен: 127.0.0.1:${port}`)
-        resolve(true)
-        return
-      } else if (result === `already connected to 127.0.0.1:${port}`) {
-        if (count < 120) {
-          setTimeout(async () => {
-            count++
-            console.log('🚀 -> setTimeout -> count:', count)
-            await connectADB(port, count)
-            resolve(false)
-            return
-          }, 500)
-        }
-      } else {
-        resolve(false)
-        return
-      }
-    } catch (err) {
-      reject(err)
-    }
-  })
-}
-
-/**
  ** Удаление всех контактов
  * @function remoteAllContats
  */
 export const remoteAllContats = async (instance: Instance) => {
   return new Promise(async (resolve, reject) => {
-    try {
-      await execCLI(`adb -s 127.0.0.1:${instance.adb_port} shell pm clear com.android.providers.contacts`)
-      resolve(true)
-    } catch (err) {
-      reject(false)
-    }
+      await clientADB
+        .shell(`127.0.0.1:${instance.adb_port}`, `pm clear com.android.providers.contacts`)
+        .then(adb.util.readAll)
+        .then((output: any) => {
+          resolve(`127.0.0.1:${instance.adb_port} ${output.toString().trim()}`)
+        })
+        .catch((err) => reject(err.toString()))
   })
 }
 
@@ -326,14 +318,20 @@ export const remoteAllContats = async (instance: Instance) => {
  ** Проверка запущенного приложения Whatsapp
  * @function checkRunWhatsapp
  */
-export const checkRunWhatsapp = async (instance: Instance): Promise<boolean> => {
+export const checkRunWhatsapp = async (instance: Instance): Promise<string | boolean> => {
   return new Promise(async (resolve, reject) => {
-    try {
-      const result = await execCLI(`adb -s 127.0.0.1:${instance.adb_port} shell pgrep com.whatsapp`)
-      if (result === '') resolve(false)
-      else resolve(true)
-    } catch (err) {
-      reject(err)
-    }
+    await clientADB
+      .shell(`127.0.0.1:${instance.adb_port}`, `pgrep com.whatsapp`)
+      .then(adb.util.readAll)
+      .then((output: any) => {
+        const result: string = output.toString().trim()
+        if(Number.isInteger(+result)){
+          resolve(true)  
+        }
+        else 
+          resolve(false)
+        
+      })
+      .catch((err) => reject(err.toString()))
   })
 }

@@ -6,6 +6,11 @@ function delay(timeout) {
         setTimeout(resolve, timeout);
     });
 }
+await setInstanceDB();
+let instances = await getInstancesDB();
+for await (let instance of instances) {
+    await startInstances(instance);
+}
 /**
  ** Запуск процесса обработки сообщений
  * @async
@@ -15,8 +20,8 @@ function delay(timeout) {
 async function startProcessWorker(instanceControl) {
     await setInstanceDB();
     let instances = await getInstancesDB();
-    // instances = instances.filter((instance: Instance) => instance.isWhatsappBan === false) // Получение незабанненных устройств
-    console.log("🚀 -> startProcessWorker -> instances:", instances);
+    // instances = instances.filter((instance: Instance) => instance.isWhatsappBan === false) // Получение незабаненных устройств
+    console.log('🚀 -> startProcessWorker -> instances:', instances);
     for await (let instance of instances) {
         await startInstances(instance);
         const worker = new Worker('./dist/src/module/process.js', {

@@ -39,6 +39,6 @@ export const redis = await redisConnect()
 
 export const getLastProneQueue = async () => {
   const phone = await redis.rpop('queue_checker_whatsapp')
-  const result: { phone: number; date_add: string} = JSON.parse(phone)
+  const result: { phone: number; date_add: string } = JSON.parse(phone)
   return result
 }

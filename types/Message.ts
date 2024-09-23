@@ -8,6 +8,7 @@ import { UUID } from './UUID.js'
 * @member {boolean} status - Статус отправки сообщения
 * @member {TimeStamp} date_create - Дата создания сообщения
 * @member {TimeStamp} date_send - Дата отправки сообщения
+* @member {string} app - Идентификатор приложения
 */
 export interface Message {
   id?: UUID | string
@@ -16,5 +17,5 @@ export interface Message {
   status?: boolean
   date_create: string
   date_send: string
-  isWhatsapp?: boolean
+  app: 'whatsapp' | 'telegram'
 }

@@ -62,7 +62,7 @@ export const getRandom = (): string => {
 export const validatePhone = (phoneNumber: number) =>  {
   const phonePattern = /^7\d{10}$/
   const phone = String(phoneNumber)
-  return phonePattern.test(phone)
+  return phonePattern.test(phone) && +phone > 79000000000
 }
 
 export const isDev = process.env?.npm_lifecycle_script?.indexOf('isDev=true') < 0 ? false : true // признак запуска проекта в режиме разработки

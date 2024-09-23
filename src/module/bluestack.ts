@@ -4,8 +4,9 @@
 import fs from 'fs'
 import { redis } from './redis.js'
 import { execCLI } from './cmd.js'
-import chalk from 'chalk'
 import type { Instance } from './../../types/Instances.js'
+import {clientADB} from './adb.js'
+
 
 const pathBluestackConf = 'C:/ProgramData/BlueStacks_nxt/'
 const configString = await fs.readFileSync(`${pathBluestackConf}bluestacks.conf`).toString()
@@ -88,11 +89,10 @@ export const setInstanceDB = async (instanceControl?: Instance): Promise<void> =
       instancesDB.push(instance)
     }
   })
-  
+
   if (instanceControl) {
     const index: number = instances.findIndex((instance: Instance) => instance.id === instanceControl.id)
-    console.log("🚀 -> setInstanceDB -> index:", index)
-    if(index !== -1){
+    if (index !== -1) {
       instances[index].isWhatsappBan = instanceControl.isWhatsappBan
       instances[index].isTelegramBan = instanceControl.isTelegramBan
     }
@@ -116,9 +116,18 @@ export const getNotActiveInstances = async (): Promise<Instance[]> => {
  * @param {string} instance - ID экземпляра
  * @param {Instances} instances - Список экземпляров
  */
-export const startInstances = async (instance: Instance): Promise<void> => {
-  try {
-    await execCLI(`"C:/Program Files/BlueStacks_nxt/HD-Player.exe" --instance ${instance.id}`).catch()
-  } catch (err) {
-  }
+export const startInstances = async (instance: Instance): Promise<boolean> => {
+  return new Promise(async (resolve, reject) => {
+    instance.isActive = true
+    await setInstanceDB(instance)
+
+    try {
+      await execCLI(`"C:/Program Files/BlueStacks_nxt/HD-Player.exe" --instance ${instance.id}`).catch()
+    } catch (err) {}
+    
+    setTimeout(async () => {
+      await clientADB.connect('127.0.0.1', instance.adb_port)
+      resolve(true)
+    }, 90000)
+  })
 }

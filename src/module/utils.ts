@@ -1,3 +1,4 @@
+import { ChildProcessWithoutNullStreams, spawn } from 'child_process'
 import fs from 'fs'
 
 const namesStr: string = fs.readFileSync('./names.json').toString() // файл с именами
@@ -54,15 +55,44 @@ export const getRandom = (): string => {
   return String(num)
 }
 
-/** 
-** Валидация номера телефона
-* @function validatePhone
-* @param {number} phoneNumber - номер телефона
-*/
-export const validatePhone = (phoneNumber: number) =>  {
+/**
+ ** Валидация номера телефона
+ * @function validatePhone
+ * @param {number} phoneNumber - номер телефона
+ */
+export const validatePhone = (phoneNumber: number) => {
   const phonePattern = /^7\d{10}$/
   const phone = String(phoneNumber)
   return phonePattern.test(phone) && +phone > 79000000000
 }
 
 export const isDev = process.env?.npm_lifecycle_script?.indexOf('isDev=true') < 0 ? false : true // признак запуска проекта в режиме разработки
+
+/*
+ ** Запуск скрита
+ * @function runScript
+ */
+export const runScript = (script: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    let result: string = '' // Результат ответа
+    const child: ChildProcessWithoutNullStreams = spawn('python')
+
+    child.stdin.cork()
+    child.stdin.write(script)
+    child.stdin.end()
+
+    child.stdout.on('data', (data) => {
+      result += data.toString()
+      process.stdout.write(data)
+    })
+
+    child.stderr.on('data', (data) => {
+      process.stderr.write(data)
+      reject(data.toString())
+    })
+
+    child.on('close', (code) => {
+      resolve(result)
+    })
+  })
+}

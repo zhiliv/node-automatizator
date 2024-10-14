@@ -1,48 +1,57 @@
 import { workerData } from 'worker_threads';
-import { killAppContact, getAllContacts, addContact, runWhatsapp, sendEventKey, connectADB, checkRunWhatsapp, } from './adb.js';
-import { generateScripts } from './run_py.js';
-import { setInstanceDB } from './bluestack.js';
-import { insertCheckWhatsapp } from './pg.js';
+import { getRandomName } from './utils.js';
 const params = workerData;
 const instance = params.instance;
 //const data: { phone: number } = await getLastProneQueue()
 const data = { phone: 79087868909 };
 if (data && data.phone && +data.phone > 79000000000) {
-    try {
-        const connect = await connectADB(instance);
-        if (connect === `127.0.0.1:${instance.adb_port}`) {
-            const contacts = await getAllContacts(instance);
-            if ((contacts && !contacts.length) || contacts.findIndex((el) => +el.number === +data.phone) === -1) {
-                await addContact(instance, +data.phone);
-            }
-            await killAppContact(instance);
-            if (await checkRunWhatsapp(instance) === false) {
-                await runWhatsapp(instance);
-            }
-        }
-        //const connect: boolean = await connectADB(params.instance.adb_port)
-        const isBlockedChecker = await generateScripts('isBlockedChecker', params.instance); // Проверка блокировки
-        const isBlockedBan = await generateScripts('isBlockedBan', params.instance); // Проверка блокировки
-        if (!isBlockedChecker && !isBlockedBan) {
-            await generateScripts('isCreate', params.instance);
-            await sendEventKey(String(+data.phone), params.instance);
-            const check = await generateScripts('isCheck', params.instance); // генерация скрипта для проверки наличия есть ли данный контакт в whatsapp
-            const checkPhone = !check;
-            await insertCheckWhatsapp(+data.phone, checkPhone, params.instance.id);
-        }
-        else {
-            params.instance.isWhatsappBan = true;
-            await setInstanceDB(params.instance);
-            console.error('Устройство заблокировано');
-        }
-    }
-    catch (err) {
-        console.error(`Произошла ошибка: ${err}`);
-    }
+    let pyScript = '';
+    pyScript += `\nfrom uiautomator2 import Device`;
+    pyScript += `\nimport time`;
+    pyScript += `\ndevice = Device('${instance.id}')`;
+    pyScript += `\ndevice.shell("am start -a android.intent.action.INSERT -t vnd.android.cursor.dir/contact -e name "${getRandomName()}" -e phone ${data.phone.toString()}")`; // Добавление номера телефона к список контактов
+    pyScript += `\nisFirstLaunch = device.xpath("//*[@text='Добавьте аккаунт, чтобы сохранить свои контакты в Google.']").exists`; //Проверка первого запуска
+    pyScript += `\nif(isFirstLaunch == True):`;
+    pyScript += `\n\tdevice.xpath("//*[@text='ОТМЕНА']").click()`; // Нажатие кнопки "Отменить"`
 }
-else {
-    await insertCheckWhatsapp(+data.phone, false, params.instance.id);
-}
+/* if (data && data.phone && +data.phone > 79000000000) {
+  try {
+    const connect: string = await connectADB(instance)
+    if(connect === `127.0.0.1:${instance.adb_port}`){
+      const contacts: any = await getAllContacts(instance)
+      if ((contacts && !contacts.length) || contacts.findIndex((el) => +el.number === +data.phone) === -1) {
+        await addContact(instance, +data.phone)
+      }
+      await killAppContact(instance)
+      
+      if(await checkRunWhatsapp(instance) === false){
+        await runWhatsapp(instance)
+      }
+    }
+    
+    
+    //const connect: boolean = await connectADB(params.instance.adb_port)
+      const isBlockedChecker: boolean | string = await generateScripts('isBlockedChecker', params.instance) // Проверка блокировки
+      const isBlockedBan: boolean | string = await generateScripts('isBlockedBan', params.instance) // Проверка блокировки
+      if (!isBlockedChecker && !isBlockedBan) {
+        await generateScripts('isCreate', params.instance)
+        await sendEventKey(String(+data.phone), params.instance)
+        const check: boolean | string = await generateScripts('isCheck', params.instance) // генерация скрипта для проверки наличия есть ли данный контакт в whatsapp
+        const checkPhone: boolean = !check
+        await insertCheckWhatsapp(+data.phone, checkPhone, params.instance.id)
+      }
+      else{
+        params.instance.isWhatsappBan = true
+        await setInstanceDB(params.instance)
+        console.error('Устройство заблокировано')
+      }
+    
+  } catch (err) {
+    console.error(`Произошла ошибка: ${err}`)
+  }
+} else {
+  await insertCheckWhatsapp(+data.phone, false, params.instance.id)
+} */
 process.exit();
 //const phone = 79087868908
 //await insertCheckWhatsapp(phone, true, params.instance.id)

@@ -29,7 +29,6 @@ async function startProcessWorker(instanceControl?: Instance) {
   await setInstanceDB()
   let instances: Instance[] = await getInstancesDB()
   // instances = instances.filter((instance: Instance) => instance.isWhatsappBan === false) // Получение незабаненных устройств
-  console.log('🚀 -> startProcessWorker -> instances:', instances)
 
   for await (let instance of instances) {
     await startInstances(instance)

@@ -34,6 +34,7 @@
     "dev-process": "nodemon --exec  \"tsc &&  node dist/src/app.js --inspect=0.0.0.0:9329 \"  isDev=true",
     "dev-server": "nodemon --exec \"tsc && node dist/src/http.js\"  isDev=true",
     "dev-test": "nodemon --exec  \"tsc &&  node dist/src/test.js --inspect=0.0.0.0:9329 \"  isDev=true",
+    "dev-test2": "nodemon --exec  \"tsc &&  node dist/src/test2.js --inspect=0.0.0.0:9329 \"  isDev=true",
     "build": "tsc",
     "start-process": "pm2 start dist/src/app.js",
     "start-server": "pm2 start dist/src/http.js"

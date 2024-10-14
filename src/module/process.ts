@@ -1,75 +1,20 @@
-/**
- ** Модуль для отправки сообщений
- */
-import fs from 'fs'
 import { parentPort, workerData } from 'worker_threads'
-import { getMessage } from './message.js'
-import {
-  getDevicesADB,
-  killAppWhatsapp,
-  killAppContact,
-  getAllContacts,
-  addContact,
-  runWhatsapp,
-  sendEventKey,
-  connectADB,
-  checkRunWhatsapp,
-} from './adb.js'
-import type { DeviceADB } from '../../types/Devices.js'
-import type { Message } from '../../types/Message.js'
 import type { Instance } from '../../types/Instances.js'
 import { generateScripts } from './run_py.js'
-import { checkElementBool } from './utils.js'
-import { getLastProneQueue } from './redis.js'
-import { tapCoordinates } from './adb.js'
-import { execCLI } from './cmd.js'
-import { setInstanceDB, getInstancesDB, startInstances } from './bluestack.js'
-import { insertCheckWhatsapp } from './pg.js'
+
 
 const params = workerData
 const instance: Instance = params.instance
 //const data: { phone: number } = await getLastProneQueue()
 
-const data: { phone: number } = {phone: 79087868909}
+const data: { phone: number } = { phone: 79087868909 }
+
 
 if (data && data.phone && +data.phone > 79000000000) {
-  try {
-    const connect: string = await connectADB(instance)
-    if(connect === `127.0.0.1:${instance.adb_port}`){
-      const contacts: any = await getAllContacts(instance)
-      if ((contacts && !contacts.length) || contacts.findIndex((el) => +el.number === +data.phone) === -1) {
-        await addContact(instance, +data.phone)
-      }
-      await killAppContact(instance)
-      
-      if(await checkRunWhatsapp(instance) === false){
-        await runWhatsapp(instance)
-      }
-    }
-    
-    
-    //const connect: boolean = await connectADB(params.instance.adb_port)
-      const isBlockedChecker: boolean | string = await generateScripts('isBlockedChecker', params.instance) // Проверка блокировки
-      const isBlockedBan: boolean | string = await generateScripts('isBlockedBan', params.instance) // Проверка блокировки
-      if (!isBlockedChecker && !isBlockedBan) {
-        await generateScripts('isCreate', params.instance)
-        await sendEventKey(String(+data.phone), params.instance)
-        const check: boolean | string = await generateScripts('isCheck', params.instance) // генерация скрипта для проверки наличия есть ли данный контакт в whatsapp
-        const checkPhone: boolean = !check
-        await insertCheckWhatsapp(+data.phone, checkPhone, params.instance.id)
-      }
-      else{
-        params.instance.isWhatsappBan = true
-        await setInstanceDB(params.instance)
-        console.error('Устройство заблокировано')
-      }
-    
-  } catch (err) {
-    console.error(`Произошла ошибка: ${err}`)
-  }
-} else {
-  await insertCheckWhatsapp(+data.phone, false, params.instance.id)
+
 }
+
+
 
 process.exit()
 //const phone = 79087868908

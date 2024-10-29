@@ -1,5 +1,6 @@
 import { Worker } from 'worker_threads';
 import { setInstanceDB, getInstancesDB, startInstances } from './module/bluestack.js';
+//import { getLastProneQueue } from './module/redis.js'
 // console.log(await getLastProneQueue())
 function delay(timeout) {
     return new Promise(function (resolve) {
@@ -17,7 +18,7 @@ for await (let instance of instances) {
  * @function startProcessWorker
  * @return {Promise<void>}
  */
-async function startProcessWorker(instanceControl) {
+const startProcessWorker = async (instanceControl) => {
     await setInstanceDB();
     let instances = await getInstancesDB();
     // instances = instances.filter((instance: Instance) => instance.isWhatsappBan === false) // Получение незабаненных устройств
@@ -35,5 +36,5 @@ async function startProcessWorker(instanceControl) {
             });
         });
     }
-}
+};
 startProcessWorker();

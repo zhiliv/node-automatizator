@@ -4,9 +4,10 @@
 import fs from 'fs'
 import { redis } from './redis.js'
 import { execCLI } from './cmd.js'
+import adb from 'adbkit'
 import type { Instance } from './../../types/Instances.js'
-import {clientADB} from './adb.js'
 
+var client = adb.createClient()
 
 const pathBluestackConf = 'C:/ProgramData/BlueStacks_nxt/'
 const configString = await fs.readFileSync(`${pathBluestackConf}bluestacks.conf`).toString()
@@ -126,8 +127,8 @@ export const startInstances = async (instance: Instance): Promise<boolean> => {
     } catch (err) {}
     
     setTimeout(async () => {
-      await clientADB.connect('127.0.0.1', instance.adb_port)
+      await client.connect('127.0.0.1', instance.adb_port)
       resolve(true)
-    }, 90000)
+    }, 5000)
   })
 }

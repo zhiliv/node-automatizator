@@ -1,7 +1,8 @@
 import { parentPort, workerData } from 'worker_threads'
 import type { Instance } from '../../types/Instances.js'
 import { generateScripts } from './run_py.js'
-
+//*[@text="Создание копии в хранилище Google"]
+//*[@resource-id="com.whatsapp:id/gdrive_new_user_setup_btn"]
 
 const params = workerData
 const instance: Instance = params.instance

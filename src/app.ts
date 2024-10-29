@@ -1,9 +1,7 @@
 import { Worker } from 'worker_threads'
 import { setInstanceDB, getInstancesDB, startInstances } from './module/bluestack.js'
-import { Instance } from './../types/Instances.js'
-import { getLastProneQueue } from './module/redis.js'
-
-
+import type { Instance } from './../types/Instances.js'
+//import { getLastProneQueue } from './module/redis.js'
 
 // console.log(await getLastProneQueue())
 
@@ -16,7 +14,7 @@ function delay(timeout) {
 await setInstanceDB()
 let instances: Instance[] = await getInstancesDB()
 for await (let instance of instances) {
-    await startInstances(instance)
+  await startInstances(instance)
 }
 
 /**
@@ -25,9 +23,11 @@ for await (let instance of instances) {
  * @function startProcessWorker
  * @return {Promise<void>}
  */
-async function startProcessWorker(instanceControl?: Instance) {
+const startProcessWorker = async (instanceControl?: Instance) => {
+  
   await setInstanceDB()
   let instances: Instance[] = await getInstancesDB()
+  
   // instances = instances.filter((instance: Instance) => instance.isWhatsappBan === false) // Получение незабаненных устройств
 
   for await (let instance of instances) {

@@ -1,4 +1,4 @@
-import { addContact, startAppContact, getAllContacts, connectADB, checkRunWhatsapp } from './module/adb.js'
+
 import type { Instance } from '../types/Instances.js';
 import { spawn } from 'child_process'
 import adb from 'adbkit'
@@ -23,7 +23,7 @@ const ins: Instance = {
       \ndevice.shell('monkey -p com.whatsapp -c android.intent.category.LAUNCHER 1')
       \ncheckContact = device.xpath("//android.widget.Button[@text='ПРИГЛАСИТЬ']").exists
       \nif checkContact== False:
-      \n\tprint("dddd")
+      \n\tprint("dddd");
       `
       
       
